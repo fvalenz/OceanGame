@@ -42,8 +42,12 @@ GamePlayManager = {
                 diamond.y = game.rnd.integerInRange(50, 600);
                 rectCurrenDiamond = this.getBoundsDiamond(diamond);
             }
+        }
 
-            this.explosion = game.add.sprite(100, 100, 'explosion');
+        this.explosionGroup = game.add.group();
+
+        for (var i = 0; i < 10; i++) {
+            this.explosion = this.explosionGroup.create(100, 100, 'explosion');
             this.explosion.tweenScale = game.add.tween(this.explosion.scale).to({
                 x: [0.4, 0.8, 0.4],
                 y: [0.4, 0.8, 0.4]
@@ -53,8 +57,21 @@ GamePlayManager = {
             }, 600, Phaser.Easing.Exponential.Out, false, 0, 0, false);
 
             this.explosion.anchor.setTo(0.5);
-            this.explosion.visible = false;
+            this.explosion.kill();
         }
+
+        this.currentScore = 0;
+        var style = {
+            form: 'bold 30pt Arial',
+            fill: '#FFFFFF',
+            align: 'center'
+        };
+        this.scoreText = game.add.text(game.width / 2, 40, '0', style);
+        this.scoreText.anchor.setTo(0.5);
+    },
+    increseScore: function() {
+        this.currentScore += 100;
+        this.scoreText.text = this.currentScore;
     },
     onTap: function() {
         this.flagFirstMouseDown = true;
@@ -108,18 +125,23 @@ GamePlayManager = {
             for (var i = 0; i < AMOUNT_DIAMONDS; i++) {
                 var rectHorse = this.getBoundsHorse();
                 var rectDiamond = this.getBoundsDiamond(this.diamonds[i]);
+
                 if (this.diamonds[i].visible && this.isReactanglesOverlapping(rectHorse, rectDiamond)) {
-                    // console.log("COLISIONO!!")
+                    this.increseScore();
                     this.diamonds[i].visible = false;
 
-                    this.explosion.visible = true;
-                    this.explosion.x = this.diamonds[i].x;
-                    this.explosion.y = this.diamonds[i].y;
-                    this.explosion.tweenScale.start();
-                    this.explosion.tweenAlpha.start();
+                    var explosion = this.explosionGroup.getFirstDead();
+                    if (explosion != null) {
+                        explosion.reset(this.diamonds[i].x, this.diamonds[i].y);
+                        explosion.tweenScale.start();
+                        explosion.tweenAlpha.start();
+
+                        explosion.tweenAlpha.onComplete.add(function(currentTarget, currentTween) {
+                            currentTarget.kill();
+                        }, this);
+                    }
                 }
             }
-
         }
     }
 };
